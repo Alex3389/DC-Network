@@ -7,3 +7,7 @@
 1. Собрать двухуровневую топологию CLOS
 2. Распределить адресное пространство для Underlay сети
 
+#### Схема сети
+
+<img width="699" height="322" alt="Image" src="https://github.com/user-attachments/assets/3911ca95-3fe7-495d-a01d-5f4ae455336b" />
+
