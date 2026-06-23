@@ -106,10 +106,7 @@ router bgp 65100
    !  
    address-family ipv4  
       neighbor LEAFS activate  
-      network 10.10.1.1/32  
-      network 172.16.1.0/30  
-      network 172.16.1.4/30  
-      network 172.16.1.8/30  
+      redistribute connected    
 !  
 end  
 
@@ -184,10 +181,7 @@ router bgp 65100
    !  
    address-family ipv4  
       neighbor LEAFS activate  
-      network 10.10.1.2/32  
-      network 172.16.2.0/30  
-      network 172.16.2.4/30  
-      network 172.16.2.8/30  
+      redistribute connected    
 !  
 end  
 
@@ -261,8 +255,7 @@ router bgp 65111
    !  
    address-family ipv4  
       neighbor SPINES activate  
-      network 10.10.1.11/32  
-      network 192.168.1.0/24  
+      redistribute connected    
 !  
 end  
 
@@ -332,7 +325,7 @@ router bgp 65112
    !  
    address-family ipv4  
       neighbor SPINES activate  
-      network 10.10.1.12/32  
+      redistribute connected   
 !  
 end  
 
@@ -399,7 +392,7 @@ router bgp 65113
    !  
    address-family ipv4  
       neighbor SPINES activate  
-      network 10.10.1.13/32  
+      redistribute connected    
 !  
 end  
 
@@ -409,19 +402,43 @@ end
 
 Spine-1:
 
+<img width="912" height="710" alt="Image" src="https://github.com/user-attachments/assets/d9ebd0b2-4918-44a5-b73a-9c4330f57a61" />
 
 
 Spine-2:
 
-
+<img width="925" height="705" alt="Image" src="https://github.com/user-attachments/assets/f8c77318-d240-4272-a2c9-e1dc6ea1abe2" />
 
 Leaf-1:
 
-
+<img width="960" height="764" alt="Image" src="https://github.com/user-attachments/assets/7eb3336a-8cea-4ce5-92a9-3e3b92e46b09" />
 
 Leaf-2:
 
-
+<img width="896" height="785" alt="Image" src="https://github.com/user-attachments/assets/f24cfe9b-af81-4bc8-ab07-76a6562a7883" />
 
 Leaf-3:
 
+<img width="893" height="772" alt="Image" src="https://github.com/user-attachments/assets/a2a89f2c-44a7-491a-9859-a52405c550ba" />
+
+### Проверка работы полноценной связности
+
+Spine-1:
+
+<img width="1004" height="458" alt="Image" src="https://github.com/user-attachments/assets/f7a5441f-b052-4474-9ea4-8338a68b8070" />
+
+Spine-2
+
+<img width="998" height="457" alt="Image" src="https://github.com/user-attachments/assets/c885cb93-e171-4c24-9f1d-35442525d3d1" />
+
+Leaf-1
+
+<img width="1061" height="823" alt="Image" src="https://github.com/user-attachments/assets/49844332-df62-48d7-8ed0-333669327eac" />
+
+Leaf-2
+
+<img width="1129" height="687" alt="Image" src="https://github.com/user-attachments/assets/155b98ae-a867-4b4c-b188-28322c673ac9" />
+
+Leaf-3
+
+<img width="1077" height="729" alt="Image" src="https://github.com/user-attachments/assets/1d8c79e2-ed05-4f45-a999-c28e77299d86" />
