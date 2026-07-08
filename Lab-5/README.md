@@ -103,7 +103,7 @@ router bgp 65000
    neighbor EVPN-PEER remote-as 65000
    neighbor EVPN-PEER update-source Loopback0
    neighbor EVPN-PEER route-reflector-client
-   neighbor EVPN-PEER send-community
+   neighbor EVPN-PEER send-community extended
    neighbor 10.10.1.11 peer group EVPN-PEER
    neighbor 10.10.1.12 peer group EVPN-PEER
    neighbor 10.10.1.13 peer group EVPN-PEER
@@ -143,10 +143,6 @@ spanning-tree mode rapid-pvst
 !
 vlan 10,20
 !
-vrf instance TENANT-1
-!
-cvx
-!
 interface Ethernet1
    description Link_to_spine-1
    mtu 9000
@@ -179,26 +175,14 @@ interface Loopback0
 !
 interface Management1
 !
-interface Vlan10
-   vrf TENANT-1
-   ip address virtual 192.168.10.1/24
-!
-interface Vlan20
-   vrf TENANT-1
-   ip address virtual 192.168.20.1/24
-!
 interface Vxlan1
    description VTEP
    vxlan source-interface Loopback0
    vxlan udp-port 4789
    vxlan vlan 10 vni 10010
    vxlan vlan 20 vni 10020
-   vxlan vrf TENANT-1 vni 10100
-!
-ip virtual-router mac-address 00:00:00:00:00:01
 !
 ip routing
-ip routing vrf TENANT-1
 !
 router bgp 65000
    maximum-paths 5
@@ -218,12 +202,6 @@ router bgp 65000
    !
    address-family ipv4
       no neighbor 10.10.1.1 activate
-   !
-   vrf TENANT-1
-      rd 65000:10101
-      route-target import evpn 65000:10100
-      route-target export evpn 65000:10100
-      redistribute connected
 !
 router ospf 1
    router-id 10.10.1.11
@@ -253,8 +231,6 @@ hostname leaf-2
 spanning-tree mode rapid-pvst
 !
 vlan 10,20
-!
-vrf instance TENANT-1
 !
 interface Ethernet1
    description Link_to_spine-1
@@ -286,25 +262,13 @@ interface Loopback0
 !
 interface Management1
 !
-interface Vlan10
-   vrf TENANT-1
-   ip address virtual 192.168.10.1/24
-!
-interface Vlan20
-   vrf TENANT-1
-   ip address virtual 192.168.20.1/24
-!
 interface Vxlan1
    vxlan source-interface Loopback0
    vxlan udp-port 4789
    vxlan vlan 10 vni 10010
    vxlan vlan 20 vni 10020
-   vxlan vrf TENANT-1 vni 10100
-!
-ip virtual-router mac-address 00:00:00:00:00:01
 !
 ip routing
-ip routing vrf TENANT-1
 !
 router bgp 65000
    maximum-paths 5
@@ -324,12 +288,6 @@ router bgp 65000
    !
    address-family ipv4
       no neighbor 10.10.1.1 activate
-   !
-   vrf TENANT-1
-      rd 65000:10102
-      route-target import evpn 65000:10100
-      route-target export evpn 65000:10100
-      redistribute connected
 !
 router ospf 1
    router-id 10.10.1.12
@@ -359,10 +317,6 @@ hostname leaf-3
 spanning-tree mode rapid-pvst
 !
 vlan 10,20
-!
-vrf instance TENANT-1
-!
-cvx
 !
 interface Ethernet1
    description Link_to_spine-1
@@ -394,26 +348,14 @@ interface Loopback0
 !
 interface Management1
 !
-interface Vlan10
-   vrf TENANT-1
-   ip address virtual 192.168.10.1/24
-!
-interface Vlan20
-   vrf TENANT-1
-   ip address virtual 192.168.20.1/24
-!
 interface Vxlan1
    description VTEP
    vxlan source-interface Loopback0
    vxlan udp-port 4789
    vxlan vlan 10 vni 10010
    vxlan vlan 20 vni 10020
-   vxlan vrf TENANT-1 vni 10100
-!
-ip virtual-router mac-address 00:00:00:00:00:01
 !
 ip routing
-ip routing vrf TENANT-1
 !
 router bgp 65000
    maximum-paths 5
@@ -433,12 +375,6 @@ router bgp 65000
    !
    address-family ipv4
       no neighbor 10.10.1.1 activate
-   !
-   vrf TENANT-1
-      rd 65000:10103
-      route-target import evpn 65000:10100
-      route-target export evpn 65000:10100
-      redistribute connected
 !
 router ospf 1
    router-id 10.10.1.13
@@ -451,42 +387,42 @@ end
 ### Проверка работы VxLAN EVPN L2
 
 #### Spine-1
-<img width="1017" height="330" alt="Image" src="https://github.com/user-attachments/assets/0077bf70-c7d9-4843-bc29-553c970546bf" />
 
-<img width="975" height="689" alt="Image" src="https://github.com/user-attachments/assets/8992071d-510c-40eb-b644-f279c1e3b5c2" />
+<img width="878" height="635" alt="Image" src="https://github.com/user-attachments/assets/f5481bbe-8a89-4c83-9973-ccba6e7ba330" />
 
 #### Leaf-1
 
-<img width="1167" height="901" alt="Image" src="https://github.com/user-attachments/assets/d265cc82-1ae0-4953-b0f1-8bbf7f5f5bda" />
+<img width="1175" height="581" alt="Image" src="https://github.com/user-attachments/assets/3529b47c-24b7-4fed-b275-4748ab4757b1" />
 
 #### Leaf-2
 
-<img width="1169" height="864" alt="Image" src="https://github.com/user-attachments/assets/e182c59d-1cb1-4363-9b6d-3ec79ca1434c" />
+<img width="1172" height="559" alt="Image" src="https://github.com/user-attachments/assets/12a6e6d0-0257-4a3b-9061-59f36d1e5761" />
 
 #### Leaf-3
 
-<img width="1174" height="848" alt="Image" src="https://github.com/user-attachments/assets/50773121-714b-449b-b669-6b87c06afb9e" />
+<img width="1179" height="555" alt="Image" src="https://github.com/user-attachments/assets/c31ffa1d-a696-438a-ae40-c32d395df9c7" />
 
 #### SRV-1
 
-<img width="685" height="291" alt="Image" src="https://github.com/user-attachments/assets/5bd7cadc-88a2-4c78-bfb8-e2de6963141e" />
+<img width="755" height="675" alt="Image" src="https://github.com/user-attachments/assets/dc5d27cc-5ecd-4df0-85a2-286b3091f0df" />
 
 #### SRV-2
 
-<img width="667" height="288" alt="Image" src="https://github.com/user-attachments/assets/7c921d0d-0156-41ac-b5d9-28433142e701" />
+<img width="772" height="650" alt="Image" src="https://github.com/user-attachments/assets/b3650f1b-6406-4a56-b99a-9509fac1f126" />
 
 #### SRV-3
 
-<img width="666" height="284" alt="Image" src="https://github.com/user-attachments/assets/a3813222-1500-47c9-b0af-25528fe36bd6" />
+<img width="766" height="646" alt="Image" src="https://github.com/user-attachments/assets/cc4c6249-9198-476b-9701-25c743bcd62d" />
 
 #### SRV-4
 
-<img width="664" height="287" alt="Image" src="https://github.com/user-attachments/assets/a96b86dc-f1d5-40ec-ae4f-7206b8ab06b0" />
+<img width="736" height="641" alt="Image" src="https://github.com/user-attachments/assets/84affd16-66fc-4b25-adf9-fe9c955aa416" />
 
 #### SRV-5
 
-<img width="667" height="270" alt="Image" src="https://github.com/user-attachments/assets/27502082-873f-4469-9980-c00a841bf577" />
+<img width="758" height="654" alt="Image" src="https://github.com/user-attachments/assets/f8011a46-9b2c-4b6c-bf28-6c8e21ca25b3" />
 
 #### SRV-6
 
-<img width="684" height="289" alt="Image" src="https://github.com/user-attachments/assets/db7d298d-2960-4900-9dc4-cb78761c3aa1" />
+<img width="767" height="635" alt="Image" src="https://github.com/user-attachments/assets/efc558f2-61bc-4043-97aa-2db10cdf7fdb" />
+
