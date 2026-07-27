@@ -6,7 +6,9 @@
 
 <img width="1112" height="558" alt="Image" src="https://github.com/user-attachments/assets/10a473de-6141-491c-86a6-88e050c8d377" />
 
-#### Адресное пространство:
+#### Было реализована полноценная MLAG пара со стороны leaf-1 и leaf-2, а также Multihoming со стороны leaf-3 и leaf-4
+
+### Адресное пространство:
 
 #### На Host-1 был создан дополнительынй интерфейс Loopback 1 с адресом: 8.8.8.8/32, который будет анонсирован во всю фабрику.
 
@@ -993,3 +995,41 @@ end
 ```
 
 </details>
+
+
+## Проверка работы VxLAN. MLAG, Multihoming, Routing.
+
+#### На host-1 была поднят протокол bgp (AS3000). Между host-1 и leaf-1, leaf-2 была поднята BGP сессия в VRF1. Cо стороны host-1 был анонсирован префикс 8.8.8.8/32
+
+#### Leaf-1:
+
+<img width="1092" height="1033" alt="Image" src="https://github.com/user-attachments/assets/4c1d3abb-217e-4fdc-a4e3-8de1035963d4" />
+
+<img width="513" height="416" alt="Image" src="https://github.com/user-attachments/assets/337075d8-00aa-4ebf-a67c-69b8dd14089e" />
+
+#### Leaf-2:
+
+<img width="1076" height="1022" alt="Image" src="https://github.com/user-attachments/assets/3cbb2259-e714-4d2b-9e2e-0b1dfffc4f0d" />
+
+<img width="521" height="417" alt="Image" src="https://github.com/user-attachments/assets/01a2b697-0cc0-41d2-9614-9616caad238f" />
+
+#### Leaf-3:
+
+<img width="1085" height="1096" alt="Image" src="https://github.com/user-attachments/assets/e25c0cbb-0b77-471b-8002-380d7ba86617" />
+
+<img width="732" height="194" alt="Image" src="https://github.com/user-attachments/assets/c0ff3523-bb46-4e05-acab-ccf0a5c4de36" />
+
+#### Leaf-4:
+
+<img width="1066" height="1105" alt="Image" src="https://github.com/user-attachments/assets/f48c2192-783e-4181-be12-5dcc591fb9ac" />
+
+<img width="661" height="180" alt="Image" src="https://github.com/user-attachments/assets/b0ae07d8-03ab-4e9b-971f-26537a1d5717" />
+
+#### host-1:
+
+<img width="775" height="337" alt="Image" src="https://github.com/user-attachments/assets/2095e6dd-e008-473f-a40e-6c34467d79a0" />
+
+#### host-2:
+
+<img width="749" height="408" alt="Image" src="https://github.com/user-attachments/assets/0451efce-4872-4a2c-af1e-866fb602cb0d" />
+
