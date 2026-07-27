@@ -613,7 +613,7 @@ end
 </details>
 
 
-### Проверка работы VxLAN. Multihoming
+### Проверка работы VxLAN. MLAG
 
 #### Leaf-1:
 
