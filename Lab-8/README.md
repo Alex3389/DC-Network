@@ -4,13 +4,15 @@
 
 #### Схема сети:
 
-<img width="1112" height="558" alt="Image" src="https://github.com/user-attachments/assets/10a473de-6141-491c-86a6-88e050c8d377" />
+<img width="1247" height="785" alt="Image" src="https://github.com/user-attachments/assets/3539974c-19d4-472f-bd93-ab0b59df403e" />
 
 #### Было реализована полноценная MLAG пара со стороны leaf-1 и leaf-2, а также Multihoming со стороны leaf-3 и leaf-4
 
+#### Leaf-1 будет выполнять роль Border-leaf. Будет установлено BGP соседство в разных vrf с маршрутизатором (Router), который будет в свою очеред маршрутизировать трафик между разными vrf.
+
 ### Адресное пространство:
 
-#### На Host-1 был создан дополнительынй интерфейс Loopback 1 с адресом: 8.8.8.8/32, который будет анонсирован во всю фабрику.
+
 
 
 | Host | Interface | IP/MASK | Description |
@@ -30,28 +32,27 @@
 |  | Ethernet2 | 172.16.2.2/30 | Link_to_Spine-2 |
 |  | Management 1 | 192.168.0.1/30 |  |
 |  | Vlan 4094 | 172.16.100.1/30 | PC-leaf-2 |
-|  | Vlan 30 | 10.10.30.11/24 | BGP_to_host-1 |
-|  | Vlan 200 | 192.168.200.254/24 |  |
+|  | Vlan 20 | 192.168.20.11/24 |  |
+|  | Vlan 30 | 192.168.30.11/24 |  |
+|  | Ethernet7.200 | 10.200.1.1/30 | Link_to_Router-1_VRF20 |
+|  | Ethernet7.203 | 10.203.1.1/30 | Link_to_Router-1_VRF30 |
 | Leaf-2 | Loopback0 | 10.10.1.12/32 | 
 |  | Ethernet1 | 172.16.1.6/30 | Link_to_Spine-1 |
 |  | Ethernet2 | 172.16.2.6/30 | Link_to_Spine-2 |
 |  | Management 1 | 192.168.0.2/30 |  |
 |  | Vlan 4094 | 172.16.100.2/30 | PC-leaf-1 |
-|  | Vlan 30 | 10.10.30.12/24 | BGP_to_host-1 |
-|  | Vlan 200 | 192.168.200.253/24 |  |
+|  | Vlan 20 | 192.168.20.12/24 |  |
+|  | Vlan 30 | 192.168.30.12/24 |  |
 | Leaf-3 | Loopback0 | 10.10.1.13/32 | 
 |  | Ethernet1 | 172.16.1.10/30 | Link_to_Spine-1 |
 |  | Ethernet2 | 172.16.2.10/30 | Link_to_Spine-2 |
-|  | Vlan 50 | 192.168.50.254/24 |  |
+|  | Vlan 20 | 192.168.20.13/24 |  |
+|  | Vlan 30 | 192.168.30.13/24 |  |
 | Leaf-4| Loopback0 | 10.10.1.14/32 | 
 |  | Ethernet1 | 172.16.1.14/30 | Link_to_Spine-1 |
 |  | Ethernet2 | 172.16.2.14/30 | Link_to_Spine-2 |
-|  | Vlan 50 | 192.168.50.253/24 |  |
- host-1| Loopback1 | 8.8.8.8/32 | 
-|  | Vlan 30 | 10.10.30.2/24 | BGP_to_spines |
-|  | Vlan 200 | 192.168.200.10/24 |  |
- host-2| Vlan 50 | 192.168.50.10/24 | 
-|  |  |  |  |
+|  | Vlan 20 | 192.168.20.14/24 |  |
+|  | Vlan 30 | 192.168.30.14/24 |  |
 
 
 ### Полная конфигурация устройств:
@@ -268,10 +269,7 @@ hostname leaf-1
 spanning-tree mode mstp
 no spanning-tree vlan-id 4094
 !
-vlan 30
-!
-vlan 200
-   name hosts
+vlan 20,30
 !
 vlan 4094
    name MLAG
@@ -279,7 +277,9 @@ vlan 4094
 !
 vrf instance MGMT
 !
-vrf instance VRF1
+vrf instance VRF20
+!
+vrf instance VRF30
 !
 interface Port-Channel45
    switchport mode trunk
@@ -308,6 +308,7 @@ interface Ethernet2
    ip ospf area 0.0.0.0
 !
 interface Ethernet3
+   switchport access vlan 20
 !
 interface Ethernet4
    description MLAG-PEER
@@ -320,11 +321,34 @@ interface Ethernet5
 interface Ethernet6
 !
 interface Ethernet7
+   description Link_to_Router-1
+   mtu 9000
+   switchport trunk allowed vlan 20,30
+   switchport mode trunk
+   no switchport
+!
+interface Ethernet7.200
+   description Link_to_Router-1_VRF20
+   encapsulation dot1q vlan 200
+   vrf VRF20
+   ip address 10.200.1.1/30
+!
+interface Ethernet7.203
+   description Link_to_Router-1_VRF30
+   encapsulation dot1q vlan 203
+   vrf VRF30
+   ip address 10.203.1.1/30
 !
 interface Ethernet8
    description Link_to_hosts
    switchport mode trunk
    channel-group 200 mode active
+!
+interface Ethernet9
+!
+interface Ethernet10
+!
+interface Ethernet11
 !
 interface Loopback0
    ip address 10.10.1.11/32
@@ -334,31 +358,42 @@ interface Management1
    vrf MGMT
    ip address 192.168.0.1/30
 !
-interface Vlan30
-   vrf VRF1
-   ip address 10.10.30.11/24
-   ip virtual-router address 10.10.30.254
+interface Vlan20
+   vrf VRF20
+   ip address 192.168.20.11/24
+   ip virtual-router address 192.168.20.254
 !
-interface Vlan200
-   vrf VRF1
-   ip address 192.168.200.254/24
-   ip virtual-router address 192.168.200.1
+interface Vlan30
+   vrf VRF30
+   ip address 192.168.30.11/24
+   ip virtual-router address 192.168.30.254
 !
 interface Vlan4094
+   description MLAG
    ip address 172.16.100.1/30
 !
 interface Vxlan1
    vxlan source-interface Loopback0
    vxlan udp-port 4789
-   vxlan vlan 200 vni 10200
-   vxlan vrf VRF1 vni 105555
+   vxlan vlan 20 vni 10020
+   vxlan vlan 30 vni 10030
+   vxlan vrf VRF20 vni 102222
+   vxlan vrf VRF30 vni 103333
    vxlan learn-restrict any
 !
 ip virtual-router mac-address 00:00:00:00:00:02
 !
 ip routing
 ip routing vrf MGMT
-ip routing vrf VRF1
+ip routing vrf VRF20
+ip routing vrf VRF30
+!
+ip prefix-list PL_HOSTS_NETS
+   seq 10 permit 0.0.0.0/0 ge 32
+!
+ip prefix-list PL_LINKS_ROUTER
+   seq 10 deny 10.200.1.0/30
+   seq 20 deny 10.203.1.0/30
 !
 mlag configuration
    domain-id LEAFS-1-2
@@ -367,6 +402,20 @@ mlag configuration
    peer-address heartbeat 192.168.0.2 vrf MGMT
    peer-link Port-Channel45
    dual-primary detection delay 1 action errdisable all-interfaces
+!
+route-map RM_HOSTS_OUT deny 10
+   match ip address prefix-list PL_HOSTS_NETS
+!
+route-map RM_HOSTS_OUT permit 50
+!
+route-map RM_REDISTR permit 10
+   match interface Loopback0
+   set origin igp
+!
+route-map RM_REDISTR deny 50
+!
+route-map RM_ROUTER_OUT permit 10
+   match ip address prefix-list PL_LINKS_ROUTER
 !
 router bgp 65000
    maximum-paths 5
@@ -379,9 +428,14 @@ router bgp 65000
    neighbor 10.10.1.2 timers 5 10
    neighbor 10.10.1.2 send-community extended
    !
-   vlan 200
+   vlan 20
       rd auto
-      route-target both 200:10200
+      route-target both 65000:10020
+      redistribute learned
+   !
+   vlan 30
+      rd auto
+      route-target both 65000:10030
       redistribute learned
    !
    address-family evpn
@@ -392,15 +446,29 @@ router bgp 65000
       no neighbor 10.10.1.1 activate
       no neighbor 10.10.1.2 activate
    !
-   vrf VRF1
-      rd 10.10.1.11:5555
-      route-target import evpn 5555:5555
-      route-target export evpn 5555:5555
-      neighbor 10.10.30.2 remote-as 3000
-      redistribute connected
+   vrf VRF20
+      rd 10.10.1.11:2222
+      route-target import evpn 65000:2222
+      route-target export evpn 65000:2222
+      neighbor 10.200.1.2 remote-as 65002
+      neighbor 10.200.1.2 update-source Ethernet7.200
       !
       address-family ipv4
-         neighbor 10.10.30.2 activate
+         neighbor 10.200.1.2 activate
+         neighbor 10.200.1.2 route-map RM_HOSTS_OUT out
+         redistribute connected route-map RM_ROUTER_OUT
+   !
+   vrf VRF30
+      rd 10.10.1.11:3333
+      route-target import evpn 65000:3333
+      route-target export evpn 65000:3333
+      neighbor 10.203.1.2 remote-as 65002
+      neighbor 10.203.1.2 update-source Ethernet7.203
+      !
+      address-family ipv4
+         neighbor 10.203.1.2 activate
+         neighbor 10.203.1.2 route-map RM_HOSTS_OUT out
+         redistribute connected route-map RM_ROUTER_OUT
 !
 router ospf 1
    router-id 10.10.1.11
@@ -433,10 +501,7 @@ hostname leaf-2
 spanning-tree mode mstp
 no spanning-tree vlan-id 4094
 !
-vlan 30
-!
-vlan 200
-   name hosts
+vlan 20,30
 !
 vlan 4094
    name MLAG
@@ -444,7 +509,9 @@ vlan 4094
 !
 vrf instance MGMT
 !
-vrf instance VRF1
+vrf instance VRF20
+!
+vrf instance VRF30
 !
 interface Port-Channel45
    switchport mode trunk
@@ -473,6 +540,7 @@ interface Ethernet2
    ip ospf area 0.0.0.0
 !
 interface Ethernet3
+   switchport access vlan 20
 !
 interface Ethernet4
    description MLAG-PEER
@@ -491,6 +559,12 @@ interface Ethernet8
    switchport mode trunk
    channel-group 200 mode active
 !
+interface Ethernet9
+!
+interface Ethernet10
+!
+interface Ethernet11
+!
 interface Loopback0
    ip address 10.10.1.12/32
    ip ospf area 0.0.0.0
@@ -499,31 +573,35 @@ interface Management1
    vrf MGMT
    ip address 192.168.0.2/30
 !
-interface Vlan30
-   vrf VRF1
-   ip address 10.10.30.12/24
-   ip virtual-router address 10.10.30.254
+interface Vlan20
+   vrf VRF20
+   ip address 192.168.20.12/24
+   ip virtual-router address 192.168.20.254
 !
-interface Vlan200
-   vrf VRF1
-   ip address 192.168.200.253/24
-   ip virtual-router address 192.168.200.1
+interface Vlan30
+   vrf VRF30
+   ip address 192.168.30.12/24
+   ip virtual-router address 192.168.30.254
 !
 interface Vlan4094
+   description MLAG
    ip address 172.16.100.2/30
 !
 interface Vxlan1
    vxlan source-interface Loopback0
    vxlan udp-port 4789
-   vxlan vlan 200 vni 10200
-   vxlan vrf VRF1 vni 105555
+   vxlan vlan 20 vni 10020
+   vxlan vlan 30 vni 10030
+   vxlan vrf VRF20 vni 102222
+   vxlan vrf VRF30 vni 103333
    vxlan learn-restrict any
 !
 ip virtual-router mac-address 00:00:00:00:00:02
 !
 ip routing
 ip routing vrf MGMT
-ip routing vrf VRF1
+ip routing vrf VRF20
+ip routing vrf VRF30
 !
 mlag configuration
    domain-id LEAFS-1-2
@@ -544,9 +622,14 @@ router bgp 65000
    neighbor 10.10.1.2 timers 5 10
    neighbor 10.10.1.2 send-community extended
    !
-   vlan 200
+   vlan 20
       rd auto
-      route-target both 200:10200
+      route-target both 65000:10020
+      redistribute learned
+   !
+   vlan 30
+      rd auto
+      route-target both 65000:10030
       redistribute learned
    !
    address-family evpn
@@ -557,21 +640,26 @@ router bgp 65000
       no neighbor 10.10.1.1 activate
       no neighbor 10.10.1.2 activate
    !
-   vrf VRF1
-      rd 10.10.1.12:5555
-      route-target import evpn 5555:5555
-      route-target export evpn 5555:5555
-      neighbor 10.10.30.2 remote-as 3000
+   vrf VRF20
+      rd 10.10.1.12:2222
+      route-target import evpn 65000:2222
+      route-target export evpn 65000:2222
       redistribute connected
+   !
+   vrf VRF30
+      rd 10.10.1.12:3333
+      route-target import evpn 65000:3333
+      route-target export evpn 65000:3333
       !
       address-family ipv4
-         neighbor 10.10.30.2 activate
+         redistribute connected
 !
 router ospf 1
    router-id 10.10.1.12
    max-lsa 12000
 !
 end
+
 
 
 ```
@@ -601,10 +689,13 @@ hostname leaf-3
 !
 spanning-tree mode mstp
 !
-vlan 50
-   name host-2
+vlan 20,30
 !
 vrf instance VRF1
+!
+vrf instance VRF20
+!
+vrf instance VRF30
 !
 interface Port-Channel1
    description Link_to_host
@@ -641,6 +732,7 @@ interface Ethernet3
    link tracking group CORE-TRACKING downstream
 !
 interface Ethernet4
+   switchport access vlan 20
 !
 interface Ethernet5
 !
@@ -658,22 +750,31 @@ interface Loopback0
 !
 interface Management1
 !
-interface Vlan50
-   vrf VRF1
-   ip address 192.168.50.254/24
-   ip virtual-router address 192.168.50.1
+interface Vlan20
+   vrf VRF20
+   ip address 192.168.20.13/24
+   ip virtual-router address 192.168.20.254
+!
+interface Vlan30
+   vrf VRF30
+   ip address 192.168.30.13/24
+   ip virtual-router address 192.168.30.254
 !
 interface Vxlan1
    vxlan source-interface Loopback0
    vxlan udp-port 4789
-   vxlan vlan 50 vni 10050
-   vxlan vrf VRF1 vni 105555
+   vxlan vlan 20 vni 10020
+   vxlan vlan 30 vni 10030
+   vxlan vrf VRF20 vni 102222
+   vxlan vrf VRF30 vni 103333
    vxlan learn-restrict any
 !
 ip virtual-router mac-address 00:00:00:00:00:02
 !
 ip routing
-ip routing vrf VRF1
+no ip routing vrf VRF1
+ip routing vrf VRF20
+ip routing vrf VRF30
 !
 router bgp 65000
    maximum-paths 5
@@ -686,9 +787,14 @@ router bgp 65000
    neighbor 10.10.1.2 timers 5 10
    neighbor 10.10.1.2 send-community extended
    !
-   vlan 50
+   vlan 20
       rd auto
-      route-target both 50:10050
+      route-target both 65000:10020
+      redistribute learned
+   !
+   vlan 30
+      rd auto
+      route-target both 65000:10030
       redistribute learned
    !
    address-family evpn
@@ -699,11 +805,21 @@ router bgp 65000
       no neighbor 10.10.1.1 activate
       no neighbor 10.10.1.2 activate
    !
-   vrf VRF1
-      rd 10.10.1.13:5555
-      route-target import evpn 5555:5555
-      route-target export evpn 5555:5555
-      redistribute connected
+   vrf VRF20
+      rd 10.10.1.13:2222
+      route-target import evpn 65000:2222
+      route-target export evpn 65000:2222
+      !
+      address-family ipv4
+         redistribute connected
+   !
+   vrf VRF30
+      rd 10.10.1.13:3333
+      route-target import evpn 65000:3333
+      route-target export evpn 65000:3333
+      !
+      address-family ipv4
+         redistribute connected
 !
 router ospf 1
    router-id 10.10.1.13
@@ -740,13 +856,18 @@ hostname leaf-4
 !
 spanning-tree mode mstp
 !
-vlan 50
-   name host-2
+vlan 20,30
 !
+
 vrf instance VRF1
+!
+vrf instance VRF20
+!
+vrf instance VRF30
 !
 interface Port-Channel1
    description Link_to_host
+   switchport trunk allowed vlan 20,30
    switchport mode trunk
    !
    evpn ethernet-segment
@@ -789,28 +910,39 @@ interface Ethernet7
 !
 interface Ethernet8
 !
+interface Ethernet9
+!
 interface Loopback0
    ip address 10.10.1.14/32
    ip ospf area 0.0.0.0
 !
 interface Management1
 !
-interface Vlan50
-   vrf VRF1
-   ip address 192.168.50.253/24
-   ip virtual-router address 192.168.50.1
+interface Vlan20
+   vrf VRF20
+   ip address 192.168.20.14/24
+   ip virtual-router address 192.168.20.254
+!
+interface Vlan30
+   vrf VRF30
+   ip address 192.168.30.14/24
+   ip virtual-router address 192.168.20.254
 !
 interface Vxlan1
    vxlan source-interface Loopback0
    vxlan udp-port 4789
-   vxlan vlan 50 vni 10050
-   vxlan vrf VRF1 vni 105555
+   vxlan vlan 20 vni 10020
+   vxlan vlan 30 vni 10030
+   vxlan vrf VRF20 vni 102222
+   vxlan vrf VRF30 vni 103333
    vxlan learn-restrict any
 !
 ip virtual-router mac-address 00:00:00:00:00:02
 !
 ip routing
 ip routing vrf VRF1
+ip routing vrf VRF20
+ip routing vrf VRF30
 !
 router bgp 65000
    maximum-paths 5
@@ -823,9 +955,14 @@ router bgp 65000
    neighbor 10.10.1.2 timers 5 10
    neighbor 10.10.1.2 send-community extended
    !
-   vlan 50
+   vlan 20
       rd auto
-      route-target both 50:10050
+      route-target both 65000:10020
+      redistribute learned
+   !
+   vlan 30
+      rd auto
+      route-target both 65000:10030
       redistribute learned
    !
    address-family evpn
@@ -836,11 +973,21 @@ router bgp 65000
       no neighbor 10.10.1.1 activate
       no neighbor 10.10.1.2 activate
    !
-   vrf VRF1
-      rd 10.10.1.14:5555
-      route-target import evpn 5555:5555
-      route-target export evpn 5555:5555
-      redistribute connected
+   vrf VRF20
+      rd 10.10.1.14:2222
+      route-target import evpn 65000:2222
+      route-target export evpn 65000:2222
+      !
+      address-family ipv4
+         redistribute connected
+   !
+   vrf VRF30
+      rd 10.10.1.14:3333
+      route-target import evpn 65000:3333
+      route-target export evpn 65000:3333
+      !
+      address-family ipv4
+         redistribute connected
 !
 router ospf 1
    router-id 10.10.1.14
@@ -873,20 +1020,24 @@ hostname host-1
 !
 spanning-tree mode mstp
 !
-vlan 30,200
+vlan 20,30
 !
 interface Port-Channel200
    description LACP
-   switchport trunk allowed vlan 30,200
+   switchport trunk allowed vlan 20,30
    switchport mode trunk
 !
 interface Ethernet1
+   switchport access vlan 20
 !
 interface Ethernet2
+   switchport access vlan 20
 !
 interface Ethernet3
+   switchport access vlan 30
 !
 interface Ethernet4
+   switchport access vlan 30
 !
 interface Ethernet5
 !
@@ -900,31 +1051,9 @@ interface Ethernet8
    description Link_to_leaf-2
    channel-group 200 mode active
 !
-interface Loopback1
-   ip address 8.8.8.8/32
+interface Ethernet9
 !
 interface Management1
-!
-interface Vlan30
-   ip address 10.10.30.2/24
-!
-interface Vlan200
-   ip address 192.168.200.10/24
-!
-ip routing
-!
-ip route 0.0.0.0/0 192.168.200.1
-!
-router bgp 3000
-   router-id 10.10.30.2
-   maximum-paths 2 ecmp 2
-   neighbor 10.10.30.11 remote-as 65000
-   neighbor 10.10.30.12 remote-as 65000
-   !
-   address-family ipv4
-      neighbor 10.10.30.11 activate
-      neighbor 10.10.30.12 activate
-      network 8.8.8.8/32
 !
 end
 
@@ -953,9 +1082,10 @@ hostname host-2
 !
 spanning-tree mode mstp
 !
-vlan 50
+vlan 20,30
 !
 interface Port-Channel1
+   switchport trunk allowed vlan 20,30
    switchport mode trunk
 !
 interface Ethernet1
@@ -977,17 +1107,12 @@ interface Ethernet5
 interface Ethernet6
 !
 interface Ethernet7
+   switchport access vlan 20
 !
 interface Ethernet8
+   switchport access vlan 30
 !
 interface Management1
-!
-interface Vlan50
-   ip address 192.168.50.10/24
-!
-ip routing
-!
-ip route 0.0.0.0/0 192.168.50.1
 !
 end
 
@@ -996,40 +1121,119 @@ end
 
 </details>
 
+<details><summary>Router-1</summary>
+
+```
+
+Router-1#sho running-config
+! Command: show running-config
+! device: Router-1 (vEOS-lab, EOS-4.29.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+no aaa root
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model ribd
+!
+hostname Router-1
+!
+spanning-tree mode mstp
+!
+vlan 20,30
+!
+interface Ethernet1
+   description Link_to_leaf-1
+   no switchport
+!
+interface Ethernet1.200
+   description VRF20_ROUTE
+   encapsulation dot1q vlan 200
+   ip address 10.200.1.2/30
+!
+interface Ethernet1.203
+   description VRF30_ROUTE
+   encapsulation dot1q vlan 203
+   ip address 10.203.1.2/30
+!
+interface Ethernet2
+!
+interface Ethernet3
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Management1
+!
+ip routing
+!
+router bgp 65002
+   no bgp default ipv4-unicast
+   neighbor 10.200.1.1 remote-as 65000
+   neighbor 10.203.1.1 remote-as 65000
+   !
+   address-family ipv4
+      neighbor 10.200.1.1 activate
+      neighbor 10.200.1.1 default-originate always
+      neighbor 10.203.1.1 activate
+      neighbor 10.203.1.1 default-originate always
+!
+end
+
+```
+</details>
+
 
 ## Проверка работы VxLAN. MLAG, Multihoming, Routing.
 
-#### На host-1 был поднят протокол bgp (AS3000). Между host-1 и leaf-1, leaf-2 была поднята BGP сессия в VRF1. Cо стороны host-1 был анонсирован префикс 8.8.8.8/32
-
 #### Leaf-1:
 
-<img width="1092" height="1033" alt="Image" src="https://github.com/user-attachments/assets/4c1d3abb-217e-4fdc-a4e3-8de1035963d4" />
+<img width="979" height="585" alt="Image" src="https://github.com/user-attachments/assets/22960a68-2b30-49e5-8695-901d3cd159df" />
 
-<img width="513" height="416" alt="Image" src="https://github.com/user-attachments/assets/337075d8-00aa-4ebf-a67c-69b8dd14089e" />
+<img width="1043" height="580" alt="Image" src="https://github.com/user-attachments/assets/eb37300b-5178-4542-a00b-98d6c543d450" />
 
 #### Leaf-2:
 
-<img width="1076" height="1022" alt="Image" src="https://github.com/user-attachments/assets/3cbb2259-e714-4d2b-9e2e-0b1dfffc4f0d" />
+<img width="1024" height="603" alt="Image" src="https://github.com/user-attachments/assets/67e9298d-418b-415c-9756-e137f6447b92" />
 
-<img width="521" height="417" alt="Image" src="https://github.com/user-attachments/assets/01a2b697-0cc0-41d2-9614-9616caad238f" />
+<img width="1087" height="591" alt="Image" src="https://github.com/user-attachments/assets/3b65aad7-3880-47c4-a9c6-c03a7cf50037" />
 
 #### Leaf-3:
 
-<img width="1085" height="1096" alt="Image" src="https://github.com/user-attachments/assets/e25c0cbb-0b77-471b-8002-380d7ba86617" />
+<img width="1066" height="584" alt="Image" src="https://github.com/user-attachments/assets/87631957-0a7c-4312-8a18-0cc36d8ba11b" />
 
-<img width="732" height="194" alt="Image" src="https://github.com/user-attachments/assets/c0ff3523-bb46-4e05-acab-ccf0a5c4de36" />
+<img width="1111" height="558" alt="Image" src="https://github.com/user-attachments/assets/9c610f18-775e-4cf5-91cb-1289df2b0d39" />
 
 #### Leaf-4:
 
-<img width="1066" height="1105" alt="Image" src="https://github.com/user-attachments/assets/f48c2192-783e-4181-be12-5dcc591fb9ac" />
+<img width="992" height="576" alt="Image" src="https://github.com/user-attachments/assets/a74ed72b-543e-40fd-913a-84e120bb2742" />
 
-<img width="661" height="180" alt="Image" src="https://github.com/user-attachments/assets/b0ae07d8-03ab-4e9b-971f-26537a1d5717" />
+<img width="1102" height="549" alt="Image" src="https://github.com/user-attachments/assets/fa52e683-706a-42ee-8a12-3f9b821723e8" />
 
-#### host-1:
+#### Router-1:
 
-<img width="775" height="337" alt="Image" src="https://github.com/user-attachments/assets/2095e6dd-e008-473f-a40e-6c34467d79a0" />
+<img width="594" height="370" alt="Image" src="https://github.com/user-attachments/assets/aba90019-d7a6-40f9-9858-adda20f4f5db" />
 
-#### host-2:
+#### VM-1:
 
-<img width="749" height="408" alt="Image" src="https://github.com/user-attachments/assets/0451efce-4872-4a2c-af1e-866fb602cb0d" />
+<img width="569" height="362" alt="Image" src="https://github.com/user-attachments/assets/23c65eb9-1d5b-4355-93ee-c0cde4fe6949" />
 
+#### VM-2:
+
+<img width="535" height="335" alt="Image" src="https://github.com/user-attachments/assets/345b75be-72a9-4dde-abce-25937e6d1e74" />
+
+#### VM-3:
+
+<img width="578" height="370" alt="Image" src="https://github.com/user-attachments/assets/2d54133d-e272-45c7-90cd-b5a3574415b7" />
+
+#### VM-4:
+
+<img width="564" height="379" alt="Image" src="https://github.com/user-attachments/assets/94eb0755-4a34-4369-b5b7-52201058b618" />
