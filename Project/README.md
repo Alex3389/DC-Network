@@ -77,6 +77,11 @@ ______
 |  | svi 20 | 192.168.20.1/24 | |
 |  | svi 30 | 192.168.30.1/24 | |
 |  | svi 500 | 172.16.77.1/30 | Link_to_DC-2 |
+| Host-1-DC-1 |  |  | 
+|  | svi 10 | 192.168.10.150/24 | |
+|  | svi 20 | 192.168.20.150/24 | |
+|  | svi 30 | 192.168.30.150/24 | |
+
 
 
 
@@ -111,6 +116,10 @@ ______
 |  | svi 20 | 192.168.20.1/24 | |
 |  | svi 30 | 192.168.30.1/24 | |
 |  | svi 500 | 172.16.77.2/30 | Link_to_DC-1 |
+| Host-1-DC-2 |  |  | 
+|  | svi 10 | 192.168.10.160/24 | |
+|  | svi 20 | 192.168.20.160/24 | |
+|  | svi 30 | 192.168.30.160/24 | |
 
 
 ### ISP (Internet Service Provider)
@@ -144,6 +153,8 @@ POD-2 (DC-2) - AS 65200
 На условной сети провайдера, состоящей из трех маршрутизаторов Juniper, был поднят протокол динамической маршрутизации OSPF для обеспечения связности между всеми маршрутизаторами. Также былы подняты протоколы MPLS и LDP.  
 Для обеспечения связности между POD (DC) был использован протокол VPLS, vpls-id 500.   
 В конечном итоге на линковочные интерфейсы в сторону каждого из POD были настроены интерфейсы с тагом vlan-id 500.
+
+На каждом Хосте (Host-1-DC-1 и Host-1-DC-2) были созданы дополнительно по 3 vlan интерфейса с соответствующими IP-адресами.
 
 ----
 
@@ -892,7 +903,20 @@ interface Ethernet8
 !
 interface Management1
 !
-no ip routing
+interface Vlan10
+   ip address 192.168.10.150/24
+!
+interface Vlan20
+   ip address 192.168.20.150/24
+!
+interface Vlan30
+   ip address 192.168.30.150/24
+!
+ip routing
+!
+ip route 192.168.10.0/24 192.168.10.1
+ip route 192.168.20.0/24 192.168.20.1
+ip route 192.168.30.0/24 192.168.30.1
 !
 end
 
@@ -1586,6 +1610,7 @@ end
 <details><summary>Host-1-DC-2</summary>
 
 ```
+
 host-1-DC-2#sho running-config
 ! Command: show running-config
 ! device: host-1-DC-2 (vEOS-lab, EOS-4.29.2F)
@@ -1641,9 +1666,17 @@ interface Management1
 interface Vlan10
    ip address 192.168.10.160/24
 !
+interface Vlan20
+   ip address 192.168.20.160/24
+!
+interface Vlan30
+   ip address 192.168.30.160/24
+!
 ip routing
 !
-ip route 0.0.0.0/0 192.168.10.1
+ip route 192.168.10.0/24 192.168.10.1
+ip route 192.168.20.0/24 192.168.20.1
+ip route 192.168.30.0/24 192.168.30.1
 !
 end
 
@@ -1981,3 +2014,76 @@ root@R3-ISP>
 ```
 
 </details>
+
+_____________
+<br>
+
+## Проверка связности в каждом Поде EVPN
+<br>
+
+### POD-1 (DC-1):
+
+<img width="711" height="158" alt="Image" src="https://github.com/user-attachments/assets/1443a70f-38d4-40fc-9bef-94be88262c70" />
+<b>
+
+<img width="752" height="164" alt="Image" src="https://github.com/user-attachments/assets/ee6c3684-73be-442a-91f4-84d27b3e1abe" />
+<br>
+<br>
+
+### POD-2 (DC-2):
+
+<img width="724" height="171" alt="Image" src="https://github.com/user-attachments/assets/ed9bf09a-d7c4-4326-82f5-57ab9212a1f3" />
+<br>
+
+<img width="730" height="161" alt="Image" src="https://github.com/user-attachments/assets/f302d146-9e11-4a3d-9054-b213aea23c49" />
+
+__________
+
+## Проверка связности между подсетями в рамках каждого Пода
+
+### POD-1 (DC-1):
+<b>
+
+<img width="554" height="517" alt="Image" src="https://github.com/user-attachments/assets/d4bc0d99-239d-488c-afb2-9969cd0c5c3a" />
+<b>
+
+### POD-2 (DC-2):
+<b>
+<img width="539" height="532" alt="Image" src="https://github.com/user-attachments/assets/c7337b87-ef86-4b8b-9f35-90a8d92d6e6b" />
+<b>
+
+------
+<b>
+
+## Проверка связности между Подами через VPLS
+
+#### Состояние VPLS: 
+<img width="720" height="539" alt="Image" src="https://github.com/user-attachments/assets/51552367-b599-4e8f-88d8-b1f92ca79a8c" />
+
+#### ICMP Между Подами:
+
+<img width="524" height="678" alt="Image" src="https://github.com/user-attachments/assets/0a3742f1-256e-42c6-addb-6bfde5a78a92" />
+
+
+<img width="568" height="408" alt="Image" src="https://github.com/user-attachments/assets/4cdcafe4-6935-473d-98ce-9489f5be6f65" />
+
+
+
+__________
+
+## Отказоустойчивость подключения хостов:
+
+#### Host-1-DC-1:
+<img width="657" height="225" alt="Image" src="https://github.com/user-attachments/assets/6e32f1a2-51ef-4b88-912f-64997c556c87" />
+<br>
+
+#### Host-1-DC-2:
+<img width="708" height="209" alt="Image" src="https://github.com/user-attachments/assets/be154338-30ec-4db6-bba1-27fd11f91c01" />
+
+____________
+
+## Вывод:
+
+Связность между VM и Хостами как внутри одного пода так и между ними реализована. Отказоустойчивое подключение хостов выполнено.
+
+
